@@ -1,0 +1,69 @@
+{
+  "name": "expandify",
+  "version": "1.0.0",
+  "description": "No fuss text expansion app",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win --publish never"
+  },
+  "keywords": [
+    "expandify",
+    "text-expansion",
+    "snippet",
+    "productivity"
+  ],
+  "author": "Raymond Maraya",
+  "license": "MIT",
+  "dependencies": {
+    "active-win": "^8.1.0",
+    "node-global-key-listener": "^0.1.1",
+    "node-powershell": "^5.0.1"
+  },
+  "devDependencies": {
+    "electron": "^40.0.0",
+    "electron-builder": "^24.13.3",
+    "png-to-ico": "^3.0.1"
+  },
+  "build": {
+    "appId": "com.expandify.app",
+    "productName": "Expandify",
+    "files": [
+      "main.js",
+      "index.html",
+      "package.json",
+      "snippets.json",
+      "allowed-apps.json",
+      "settings.json",
+      "icon.ico",
+      "images/**/*"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Expandify",
+      "installerIcon": "icon.ico",
+      "uninstallerIcon": "icon.ico",
+      "installerHeaderIcon": "icon.ico",
+      "license": "LICENSE.txt",
+      "artifactName": "${productName}-${version}-Setup.${ext}"
+    },
+    "directories": {
+      "output": "dist"
+    }
+  }
+}
