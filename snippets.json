@@ -1,0 +1,20 @@
+[
+  {
+    "name": "Test",
+    "trigger": ";test",
+    "content": "<p>test</p>",
+    "richText": true,
+    "category": "Uncategorized",
+    "disabled": false,
+    "usage": 0
+  },
+  {
+    "name": "Email Signature",
+    "trigger": ";sig",
+    "content": "Test",
+    "richText": false,
+    "category": "Test Category",
+    "disabled": false,
+    "usage": 0
+  }
+]

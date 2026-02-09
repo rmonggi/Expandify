@@ -1,0 +1,2340 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Expandify</title>
+  <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+      background: #ccc;
+      border-radius: 4px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+      background: #999;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: #f0f2f5;
+      height: 100vh;
+      overflow: hidden;
+      color: #1a1a1a;
+    }
+    
+    .app-container {
+      display: flex;
+      height: 100vh;
+      flex-direction: column;
+    }
+    
+    .header {
+      background: linear-gradient(135deg, #0078d4 0%, #1084d8 100%);
+      color: white;
+      padding: 0;
+      box-shadow: 0 2px 8px rgba(0, 120, 212, 0.25);
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .menu-bar {
+      background: rgba(0, 0, 0, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 20px;
+      height: 50px;
+      backdrop-filter: blur(8px);
+    }
+    
+    .menu-left {
+      display: flex;
+    }
+    
+    .menu-item {
+      padding: 12px 16px;
+      cursor: pointer;
+      font-size: 14px;
+      color: white;
+      position: relative;
+      transition: all 0.3s ease;
+      font-weight: 500;
+      border-radius: 4px;
+    }
+    
+    .menu-item:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+    
+    .menu-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      background: white;
+      border: none;
+      border-radius: 6px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+      min-width: 200px;
+      display: none;
+      z-index: 1000;
+      margin-top: 8px;
+      overflow: hidden;
+    }
+    
+    .menu-item:hover .menu-dropdown {
+      display: block;
+    }
+    
+    .menu-dropdown-item {
+      padding: 12px 16px;
+      color: #333;
+      cursor: pointer;
+      transition: all 0.2s;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 13px;
+    }
+    
+    .menu-dropdown-item:last-child {
+      border-bottom: none;
+    }
+    
+    .menu-dropdown-item:hover {
+      background: #f0f7ff;
+      color: #0078d4;
+      padding-left: 20px;
+    }
+    
+    .menu-brand {
+      font-size: 14px;
+      color: white;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+    
+    .warning-banner {
+      background: #fff4ce;
+      color: #856404;
+      padding: 12px 20px;
+      font-size: 13px;
+      text-align: center;
+      font-weight: 500;
+      display: none;
+      border-bottom: 1px solid #ffe69c;
+    }
+    
+    .warning-banner.show {
+      display: block;
+    }
+    
+    .main-content {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+    
+    .resizer {
+      width: 5px;
+      background: #e0e0e0;
+      cursor: col-resize;
+      position: relative;
+      flex-shrink: 0;
+      transition: background 0.2s ease;
+    }
+    
+    .resizer:hover {
+      background: #0078d4;
+    }
+    
+    /* Left Sidebar - Categories */
+    .sidebar {
+      width: 250px;
+      min-width: 150px;
+      max-width: 400px;
+      background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .sidebar-header {
+      padding: 16px 20px;
+      background: rgba(0, 0, 0, 0.2);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .sidebar-header h3 {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin: 0;
+      flex: 1;
+      font-weight: 700;
+    }
+    
+    .btn-new-category {
+      background: rgba(52, 152, 219, 0.2);
+      color: white;
+      border: 1px solid rgba(52, 152, 219, 0.4);
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.3s ease;
+      white-space: nowrap;
+      font-weight: 500;
+    }
+    
+    .btn-new-category:hover {
+      background: rgba(52, 152, 219, 0.35);
+      border-color: rgba(52, 152, 219, 0.6);
+      transform: translateY(-1px);
+    }
+    
+    .category-actions-bar {
+      display: none;
+      padding: 12px 15px;
+      background: rgba(0, 0, 0, 0.1);
+    }
+    
+    .category-actions-bar.visible {
+      display: block;
+    }
+    
+    .category-actions-bar button {
+      width: 100%;
+      background: linear-gradient(135deg, #e74c3c 0%, #d32f2f 100%);
+      color: white;
+      border: none;
+      padding: 9px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 6px rgba(231, 76, 60, 0.3);
+    }
+    
+    .category-actions-bar button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4);
+    }
+    
+    .categories-list {
+      flex: 1;
+      overflow-y: auto;
+    }
+    
+    .category-item {
+      padding: 10px 16px;
+      cursor: pointer;
+      border-left: 3px solid transparent;
+      transition: all 0.2s ease;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      font-weight: 500;
+      font-size: 13px;
+      border-radius: 0 8px 8px 0;
+      margin-right: 8px;
+    }
+    
+    .category-checkbox {
+      display: none;
+      cursor: pointer;
+    }
+    
+    .category-checkbox.visible {
+      display: block;
+    }
+    
+    .category-item:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+    
+    .category-item.active {
+      background: rgba(52, 152, 219, 0.2);
+      border-left-color: #3498db;
+      color: #ecf0f1;
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .category-name {
+      flex: 1;
+    }
+    
+    .category-count {
+      background: rgba(255, 255, 255, 0.15);
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      margin-left: 8px;
+      font-weight: 600;
+      min-width: 24px;
+      text-align: center;
+    }
+    
+    .category-item.active .category-count {
+      background: rgba(52, 152, 219, 0.4);
+    }
+    
+    /* Middle Panel - Snippets List */
+    .snippets-panel {
+      width: 350px;
+      min-width: 250px;
+      max-width: 500px;
+      background: white;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 2px 0 8px rgba(0, 0, 0, 0.08);
+    }
+    
+    .snippets-panel-header {
+      padding: 20px;
+      border-bottom: 1px solid #e8e8e8;
+      background: linear-gradient(180deg, #fafbfc 0%, #f5f7fa 100%);
+    }
+    
+    .snippets-panel-header h3 {
+      font-size: 16px;
+      margin-bottom: 12px;
+      font-weight: 600;
+      color: #1a1a1a;
+    }
+    
+    .search-bar {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid #d0d0d0;
+      border-radius: 6px;
+      font-size: 13px;
+      margin-bottom: 12px;
+      transition: all 0.3s ease;
+      background: white;
+    }
+    
+    .search-bar:focus {
+      outline: none;
+      border-color: #0078d4;
+      box-shadow: 0 0 0 3px rgba(0, 120, 212, 0.1);
+    }
+    
+    .bulk-actions {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+    
+    .bulk-actions button {
+      flex: 1;
+      min-width: 100px;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 5px;
+      font-size: 12px;
+      cursor: pointer;
+      background: #f0f0f0;
+      color: #333;
+      transition: all 0.3s ease;
+      font-weight: 500;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    }
+    
+    .bulk-actions button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+    }
+    
+    .bulk-actions button.delete {
+      background: linear-gradient(135deg, #d13438 0%, #c41c1c 100%);
+      color: white;
+    }
+    
+    .bulk-actions button.delete:hover {
+      box-shadow: 0 2px 8px rgba(209, 52, 56, 0.3);
+    }
+    
+    .bulk-actions button.move {
+      background: linear-gradient(135deg, #0078d4 0%, #0063b1 100%);
+      color: white;
+    }
+    
+    .bulk-actions button.move:hover {
+      box-shadow: 0 2px 8px rgba(0, 120, 212, 0.3);
+    }
+    
+    .bulk-actions button.toggle-disable {
+      background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+      color: white;
+    }
+    
+    .bulk-actions button.toggle-disable:hover {
+      box-shadow: 0 2px 8px rgba(90, 98, 104, 0.3);
+    }
+    
+    .btn-new-snippet {
+      width: 100%;
+      background: linear-gradient(135deg, #0078d4 0%, #0063b1 100%);
+      color: white;
+      border: none;
+      padding: 11px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 6px rgba(0, 120, 212, 0.2);
+    }
+    
+    .btn-new-snippet:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 120, 212, 0.3);
+    }
+    
+    .snippets-list {
+      flex: 1;
+      overflow-y: auto;
+    }
+    
+    .snippet-list-item {
+      padding: 13px 16px;
+      border-bottom: 1px solid #f0f0f0;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      gap: 12px;
+      align-items: start;
+      opacity: 1;
+    }
+    
+    .snippet-list-item.disabled {
+      opacity: 0.6;
+    }
+    
+    .snippet-list-item:hover {
+      background: #f8f9fb;
+    }
+    
+    .snippet-list-item.active {
+      background: linear-gradient(135deg, #e3f2fd 0%, #ebf5fe 100%);
+      border-left: 3px solid #0078d4;
+      padding-left: 13px;
+    }
+    
+    .snippet-checkbox {
+      margin-top: 3px;
+      cursor: pointer;
+      accent-color: #0078d4;
+    }
+    
+    .snippet-list-content {
+      flex: 1;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+    }
+    
+    .snippet-list-title {
+      font-weight: 600;
+      font-size: 14px;
+      color: #1a1a1a;
+      flex: 1;
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .snippet-list-trigger {
+      font-size: 11px;
+      color: #0078d4;
+      font-family: 'Courier New', monospace;
+      background: #e3f2fd;
+      padding: 3px 10px;
+      border-radius: 4px;
+      display: inline-block;
+      white-space: nowrap;
+      flex-shrink: 0;
+      font-weight: 600;
+    }
+    
+    .snippet-list-actions {
+      display: none;
+    }
+    
+    .detail-body img {
+      max-width: 100%;
+      height: auto;
+      display: block;
+      margin: 15px 0;
+      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .detail-body.rich {
+      min-width: 480px;
+    }
+    
+    .snippet-action-btn {
+      font-size: 11px;
+      padding: 5px 10px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      background: #f0f0f0;
+      color: #333;
+      transition: all 0.2s ease;
+      font-weight: 500;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    }
+    
+    .snippet-action-btn:hover {
+      transform: translateY(-1px);
+    }
+    
+    .snippet-action-btn.edit {
+      background: linear-gradient(135deg, #0078d4 0%, #0063b1 100%);
+      color: white;
+    }
+    
+    .snippet-action-btn.edit:hover {
+      box-shadow: 0 2px 6px rgba(0, 120, 212, 0.3);
+    }
+    
+    .snippet-action-btn.delete {
+      background: linear-gradient(135deg, #d13438 0%, #c41c1c 100%);
+      color: white;
+    }
+    
+    .snippet-action-btn.delete:hover {
+      box-shadow: 0 2px 6px rgba(209, 52, 56, 0.3);
+    }
+    
+    /* Right Panel - Detail View */
+    .detail-panel {
+      flex: 1;
+      background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+      overflow-y: auto;
+      padding: 40px;
+      position: relative;
+    }
+    
+    .detail-empty {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      color: #999;
+    }
+    
+    .detail-empty svg {
+      width: 100px;
+      height: 100px;
+      opacity: 0.3;
+      margin-bottom: 20px;
+    }
+    
+    .detail-content h2 {
+      font-size: 28px;
+      margin-bottom: 12px;
+      color: #1a1a1a;
+      font-weight: 700;
+    }
+    
+    .detail-trigger {
+      display: inline-block;
+      background: linear-gradient(135deg, #0078d4 0%, #0063b1 100%);
+      color: white;
+      padding: 7px 14px;
+      border-radius: 5px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      margin-bottom: 20px;
+      font-weight: 600;
+      box-shadow: 0 2px 6px rgba(0, 120, 212, 0.2);
+    }
+    
+    .detail-meta {
+      display: flex;
+      gap: 24px;
+      margin-bottom: 24px;
+      font-size: 13px;
+      color: #666;
+    }
+    
+    .detail-divider {
+      border: none;
+      border-top: 1px solid #e8e8e8;
+      margin: 24px 0;
+    }
+    
+    .detail-body {
+      font-size: 14px;
+      line-height: 1.7;
+      color: #333;
+    }
+    
+    .detail-body.plain {
+      white-space: pre-wrap;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      background: #f5f5f5;
+      padding: 16px;
+      border-radius: 6px;
+      border: 1px solid #e0e0e0;
+    }
+    
+    .detail-body.rich {
+      font-size: 14px;
+    }
+    
+    /* Floating Notification */
+    .floating-notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+      color: white;
+      padding: 16px 24px;
+      border-radius: 6px;
+      box-shadow: 0 8px 24px rgba(40, 167, 69, 0.3);
+      z-index: 10000;
+      animation: slideIn 0.3s ease-out, slideOut 0.3s ease-out 3.7s forwards;
+      font-weight: 500;
+      font-size: 14px;
+    }
+    
+    @keyframes slideIn {
+      from {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+    
+    @keyframes slideOut {
+      from {
+        transform: translateX(0);
+        opacity: 1;
+      }
+      to {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+    }
+    
+    /* Modal Styles */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(4px);
+      animation: fadeIn 0.2s ease-out;
+    }
+    
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+    
+    .modal {
+      background: white;
+      border-radius: 8px;
+      width: 90%;
+      max-width: 600px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.25);
+      animation: slideUp 0.3s ease-out;
+    }
+    
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .modal-header {
+      padding: 24px;
+      border-bottom: 1px solid #e8e8e8;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .modal-header h3 {
+      font-size: 20px;
+      color: #1a1a1a;
+      font-weight: 700;
+    }
+    
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 24px;
+      color: #999;
+      cursor: pointer;
+      padding: 0;
+      width: 30px;
+      height: 30px;
+      transition: all 0.2s ease;
+    }
+    
+    .modal-close:hover {
+      color: #333;
+      transform: scale(1.1);
+    }
+    
+    .modal-body {
+      padding: 24px;
+    }
+    
+    .form-group {
+      margin-bottom: 18px;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      font-size: 14px;
+      color: #1a1a1a;
+    }
+    
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      width: 100%;
+      padding: 11px 14px;
+      border: 1px solid #d0d0d0;
+      border-radius: 6px;
+      font-size: 14px;
+      font-family: inherit;
+      transition: all 0.3s ease;
+      background: white;
+    }
+    
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: #0078d4;
+      box-shadow: 0 0 0 3px rgba(0, 120, 212, 0.1);
+    }
+    
+    .form-group textarea {
+      min-height: 120px;
+      resize: vertical;
+      font-family: 'Courier New', monospace;
+    }
+    
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    
+    .checkbox-group input[type="checkbox"] {
+      width: auto;
+      cursor: pointer;
+      accent-color: #0078d4;
+    }
+    
+    .modal-footer {
+      padding: 20px 24px;
+      border-top: 1px solid #e8e8e8;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: #fafbfc;
+    }
+    
+    .modal-footer-buttons {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+    
+    .btn {
+      padding: 11px 22px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    }
+    
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, #0078d4 0%, #0063b1 100%);
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      box-shadow: 0 2px 8px rgba(0, 120, 212, 0.3);
+    }
+    
+    .btn-secondary {
+      background: #f0f0f0;
+      color: #333;
+    }
+    
+    .btn-secondary:hover {
+      background: #e0e0e0;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    }
+    
+    .btn-danger {
+      background: linear-gradient(135deg, #d13438 0%, #c41c1c 100%);
+      color: white;
+    }
+    
+    .btn-danger:hover {
+      box-shadow: 0 2px 8px rgba(209, 52, 56, 0.3);
+    }
+
+    /* Allowed Apps Styling */
+    .allowed-apps-container {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .apps-list {
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      max-height: 300px;
+      overflow-y: auto;
+      background: #fafafa;
+    }
+
+    .app-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 15px;
+      border-bottom: 1px solid #e0e0e0;
+      background: white;
+    }
+
+    .app-item:last-child {
+      border-bottom: none;
+    }
+
+    .app-item:hover {
+      background: #f5f5f5;
+    }
+
+    .app-name {
+      flex: 1;
+      font-size: 14px;
+      color: #333;
+      word-break: break-all;
+    }
+
+    .app-remove-btn {
+      background: #d13438;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 12px;
+      margin-left: 10px;
+      transition: background 0.2s;
+    }
+
+    .app-remove-btn:hover {
+      background: #a52a2e;
+    }
+
+    .add-app-controls {
+      display: flex;
+      gap: 10px;
+    }
+
+    .app-input {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+
+    .app-input:focus {
+      outline: none;
+      border-color: #0078d4;
+    }
+
+    .browse-btn {
+      background: #0078d4;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: background 0.2s;
+    }
+
+    .browse-btn:hover {
+      background: #005a9e;
+    }
+
+    .add-app-btn {
+      background: #107c10;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: background 0.2s;
+    }
+
+    .add-app-btn:hover {
+      background: #0d5d1f;
+    }
+
+    /* Quill Editor */
+    #editor-wrapper {
+      display: none;
+    }
+    
+    #editor-wrapper.visible {
+      display: block;
+    }
+    
+    #editor-container {
+      height: 250px;
+      background: white;
+    }
+    
+    .ql-toolbar {
+      border: 1px solid #ddd;
+      border-bottom: none;
+      border-radius: 4px 4px 0 0;
+      background: #f9f9f9;
+    }
+    
+    .ql-container {
+      border: 1px solid #ddd;
+      border-radius: 0 0 4px 4px;
+      height: 200px;
+    }
+    
+    .plain-text-editor {
+      display: none;
+    }
+    
+    .plain-text-editor.visible {
+      display: block;
+    }
+    
+    .editor-hint {
+      font-size: 12px;
+      color: #666;
+      margin-top: 5px;
+      font-style: italic;
+    }
+    
+    .error-message {
+      background: #f8d7da;
+      color: #721c24;
+      padding: 10px;
+      border-radius: 4px;
+      border: 1px solid #f5c6cb;
+      font-size: 13px;
+    }
+    
+    .new-category-inline {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    
+    .new-category-inline input {
+      flex: 1;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+    
+    .new-category-inline button {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+      background: #0078d4;
+      color: white;
+    }
+    
+    .new-category-inline button:hover {
+      background: #005a9e;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <div class="header">
+      <div class="menu-bar">
+        <div class="menu-left">
+          <div class="menu-item">
+            File
+            <div class="menu-dropdown">
+              <div class="menu-dropdown-item" onclick="exportSnippets()">Export Snippets</div>
+              <div class="menu-dropdown-item" onclick="importSnippets()">Import Snippets</div>
+              <div style="border-top: 1px solid #e0e0e0; margin: 4px 0;"></div>
+              <div class="menu-dropdown-item" onclick="showAboutModal()">About</div>
+            </div>
+          </div>
+          <div class="menu-item">
+            Options
+            <div class="menu-dropdown">
+              <div class="menu-dropdown-item" id="toggleTriggerItem" onclick="toggleTriggers()">Disable Expansion</div>
+              <div class="menu-dropdown-item" id="startupItem" onclick="toggleStartupOnBoot()">☐ Startup on Boot</div>
+              <div class="menu-dropdown-item" onclick="toggleManageCategories()">Manage Categories</div>
+              <div class="menu-dropdown-item" onclick="showAllowedAppsModal()">Allowed Apps</div>
+            </div>
+          </div>
+        </div>
+        <div class="menu-brand">Expandify v1.0.0</div>
+      </div>
+    </div>
+    
+    <div class="warning-banner" id="warningBanner">⚠️ Expansion is currently disabled. Triggers will not work.</div>
+    
+    <div class="main-content">
+      <!-- Left Sidebar: Categories -->
+      <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+          <h3>Categories</h3>
+          <button class="btn-new-category" onclick="showNewCategoryModal()">+ Add</button>
+        </div>
+        <div class="category-actions-bar" id="categoryActionsBar">
+          <button onclick="bulkDeleteCategories()">Delete Selected</button>
+        </div>
+        <div class="categories-list" id="categoriesList"></div>
+      </div>
+      
+      <div class="resizer" id="resizer1"></div>
+      
+      <!-- Middle Panel: Snippets -->
+      <div class="snippets-panel" id="snippetsPanel">
+        <div class="snippets-panel-header">
+          <h3 id="categoryTitle">All Snippets</h3>
+          <input type="text" class="search-bar" id="searchBar" placeholder="🔍 Search snippets..." oninput="filterSnippets()">
+          <div class="bulk-actions" id="bulkActions" style="display: none;">
+            <button class="toggle-disable" onclick="bulkToggleDisable()">Disable/Enable</button>
+            <button class="move" onclick="showMoveModal()">Move</button>
+            <button class="delete" onclick="bulkDeleteSnippets()">Delete</button>
+          </div>
+          <button class="btn-new-snippet" onclick="showNewSnippetModal()">+ New Snippet</button>
+        </div>
+        <div class="snippets-list" id="snippetsList"></div>
+      </div>
+      
+      <div class="resizer" id="resizer2"></div>
+      
+      <!-- Right Panel: Detail View -->
+      <div class="detail-panel" id="detailPanel">
+        <div class="detail-empty">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+          </svg>
+          <h3>No snippet selected</h3>
+          <p>Select a snippet from the list to view its details</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <input type="file" id="importFileInput" accept=".xml" style="display: none;" onchange="handleImportFile(event)">
+  
+  <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+  <script>
+    const { ipcRenderer } = require('electron');
+    const fs = require('fs');
+    const path = require('path');
+    
+    // State
+    let categories = [];
+    let snippets = [];
+    let selectedCategory = null;
+    let selectedSnippet = null;
+    let editingSnippetIndex = null;
+    let quill = null;
+    let selectedSnippets = new Set();
+    let searchQuery = '';
+    let managingCategories = false;
+    let selectedCategories = new Set();
+    let triggersDisabled = false;
+    
+    // Resizable panels
+    function initResizers() {
+      const resizer1 = document.getElementById('resizer1');
+      const resizer2 = document.getElementById('resizer2');
+      const sidebar = document.getElementById('sidebar');
+      const snippetsPanel = document.getElementById('snippetsPanel');
+      
+      let isResizing = false;
+      let currentResizer = null;
+      
+      function startResize(resizer) {
+        isResizing = true;
+        currentResizer = resizer;
+        document.body.style.cursor = 'col-resize';
+      }
+      
+      function stopResize() {
+        isResizing = false;
+        currentResizer = null;
+        document.body.style.cursor = 'default';
+      }
+      
+      function resize(e) {
+        if (!isResizing) return;
+        
+        if (currentResizer === resizer1) {
+          const newWidth = e.clientX;
+          if (newWidth >= 150 && newWidth <= 400) {
+            sidebar.style.width = newWidth + 'px';
+          }
+        } else if (currentResizer === resizer2) {
+          const sidebarWidth = sidebar.offsetWidth;
+          const newWidth = e.clientX - sidebarWidth - 5;
+          if (newWidth >= 250 && newWidth <= 500) {
+            snippetsPanel.style.width = newWidth + 'px';
+          }
+        }
+      }
+      
+      resizer1.addEventListener('mousedown', () => startResize(resizer1));
+      resizer2.addEventListener('mousedown', () => startResize(resizer2));
+      document.addEventListener('mousemove', resize);
+      document.addEventListener('mouseup', stopResize);
+    }
+    
+    async function init() {
+      await loadData();
+      renderCategories();
+      renderSnippets();
+      initResizers();
+      initDragAndDrop();
+      initStartupState();
+    }
+    
+    async function loadData() {
+      snippets = await ipcRenderer.invoke('get-snippets');
+      
+      // Extract categories from snippets
+      const categorySet = new Set();
+      snippets.forEach(s => {
+        if (s.category && s.category.trim()) {
+          categorySet.add(s.category);
+        } else {
+          categorySet.add('Uncategorized');
+        }
+      });
+      
+      // Build categories list with deduplication
+      const sortedCategories = Array.from(categorySet).sort();
+      categories = ['All', ...sortedCategories];
+      selectedCategory = 'All';
+    }
+    
+    function renderCategories() {
+      const container = document.getElementById('categoriesList');
+      
+      container.innerHTML = categories.map(cat => {
+        const count = cat === 'All' 
+          ? snippets.length 
+          : snippets.filter(s => (s.category || 'Uncategorized') === cat).length;
+        
+        const isDeletable = cat !== 'All' && cat !== 'Uncategorized';
+        const isChecked = selectedCategories.has(cat);
+        
+        return `
+          <div class="category-item ${selectedCategory === cat ? 'active' : ''}" onclick="${!managingCategories ? `selectCategory('${escapeAttr(cat)}')` : ''}">
+            ${isDeletable && managingCategories ? `
+              <input type="checkbox" class="category-checkbox visible" 
+                     ${isChecked ? 'checked' : ''} 
+                     onchange="toggleCategorySelection('${escapeAttr(cat)}')" 
+                     onclick="event.stopPropagation()">
+            ` : ''}
+            <span class="category-name">${escapeHtml(cat)}</span>
+            <span class="category-count">${count}</span>
+          </div>
+        `;
+      }).join('');
+    }
+    
+    function toggleManageCategories() {
+      managingCategories = !managingCategories;
+      selectedCategories.clear();
+      renderCategories();
+      updateCategoryActions();
+    }
+    
+    function toggleCategorySelection(category) {
+      if (selectedCategories.has(category)) {
+        selectedCategories.delete(category);
+      } else {
+        selectedCategories.add(category);
+      }
+      updateCategoryActions();
+      renderCategories();
+    }
+    
+    function updateCategoryActions() {
+      const actionsBar = document.getElementById('categoryActionsBar');
+      actionsBar.classList.toggle('visible', managingCategories && selectedCategories.size > 0);
+    }
+    
+    async function bulkDeleteCategories() {
+      if (selectedCategories.size === 0) return;
+      
+      const categoryList = Array.from(selectedCategories).join(', ');
+      
+      const modal = document.createElement('div');
+      modal.className = 'modal-overlay';
+      modal.innerHTML = `
+        <div class="modal" style="max-width: 450px;">
+          <div class="modal-header">
+            <h3>Confirm Delete Categories</h3>
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+          </div>
+          <div class="modal-body">
+            <p>Are you sure you want to delete <strong>${selectedCategories.size}</strong> categor${selectedCategories.size > 1 ? 'ies' : 'y'}?</p>
+            <p style="margin-top: 10px;"><strong>${categoryList}</strong></p>
+            <p style="margin-top: 10px; color: #d13438; font-size: 13px;">⚠️ Snippets in deleted categories will be moved to "Uncategorized"</p>
+          </div>
+          <div class="modal-footer">
+            <div class="modal-footer-buttons">
+              <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+              <button class="btn btn-danger" onclick="confirmBulkDeleteCategories()">Delete Categories</button>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      setupModalBackdropHandler(modal);
+    }
+    
+    window.confirmBulkDeleteCategories = async function() {
+      for (const category of selectedCategories) {
+        for (let i = 0; i < snippets.length; i++) {
+          if (snippets[i].category === category) {
+            snippets[i].category = 'Uncategorized';
+            await ipcRenderer.invoke('update-snippet', i, snippets[i]);
+          }
+        }
+      }
+      
+      categories = categories.filter(cat => !selectedCategories.has(cat));
+      selectedCategories.clear();
+      managingCategories = false;
+      
+      await loadData();
+      renderCategories();
+      renderSnippets();
+      updateCategoryActions();
+      closeModal();
+    };
+    
+    function selectCategory(category) {
+      selectedCategory = category;
+      selectedSnippet = null;
+      selectedSnippets.clear();
+      searchQuery = '';
+      document.getElementById('searchBar').value = '';
+      renderCategories();
+      renderSnippets();
+      showEmptyDetail();
+      updateBulkActions();
+      
+      document.getElementById('categoryTitle').textContent = category;
+    }
+    
+    function filterSnippets() {
+      searchQuery = document.getElementById('searchBar').value.toLowerCase();
+      renderSnippets();
+    }
+    
+    function renderSnippets() {
+      const container = document.getElementById('snippetsList');
+      
+      let filtered = snippets;
+      if (selectedCategory && selectedCategory !== 'All') {
+        filtered = snippets.filter(s => (s.category || 'Uncategorized') === selectedCategory);
+      }
+      
+      if (searchQuery) {
+        filtered = filtered.filter(s => 
+          s.name.toLowerCase().includes(searchQuery) ||
+          s.trigger.toLowerCase().includes(searchQuery) ||
+          s.content.toLowerCase().includes(searchQuery)
+        );
+      }
+      
+      if (filtered.length === 0) {
+        container.innerHTML = '<div style="padding: 20px; text-align: center; color: #999;">No snippets found</div>';
+        return;
+      }
+      
+      container.innerHTML = filtered.map(snippet => {
+        const globalIndex = snippets.indexOf(snippet);
+        const isChecked = selectedSnippets.has(globalIndex);
+        return `
+          <div class="snippet-list-item ${snippet.disabled ? 'disabled' : ''}" data-snippet-index="${globalIndex}" draggable="true" ${selectedSnippet === globalIndex ? 'style="background: #e3f2fd;"' : ''}>
+            <input type="checkbox" class="snippet-checkbox" 
+                   ${isChecked ? 'checked' : ''} 
+                   onchange="toggleSnippetSelection(${globalIndex})" 
+                   onclick="event.stopPropagation()">
+            <div class="snippet-list-content" onclick="selectSnippet(${globalIndex})">
+              <div class="snippet-list-title">${escapeHtml(snippet.name)}</div>
+              <span class="snippet-list-trigger">${escapeHtml(snippet.trigger)}</span>
+            </div>
+            <div class="snippet-list-actions" style="display: none; gap: 8px;">
+              <button class="snippet-action-btn edit" onclick="event.stopPropagation(); editSnippet(${globalIndex})">Edit</button>
+              <button class="snippet-action-btn delete" onclick="event.stopPropagation(); deleteSnippet(${globalIndex})">Delete</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+      
+      initDragAndDrop();
+    }
+    
+    function toggleSnippetSelection(index) {
+      if (selectedSnippets.has(index)) {
+        selectedSnippets.delete(index);
+      } else {
+        selectedSnippets.add(index);
+      }
+      updateBulkActions();
+      renderSnippets();
+    }
+    
+    function updateBulkActions() {
+      const bulkActions = document.getElementById('bulkActions');
+      bulkActions.style.display = selectedSnippets.size > 0 ? 'flex' : 'none';
+      
+      // Update button text based on selected snippets' state
+      if (selectedSnippets.size > 0) {
+        const toggleButton = document.querySelector('.bulk-actions .toggle-disable');
+        
+        // Check if all selected snippets are disabled
+        const allDisabled = Array.from(selectedSnippets).every(index => 
+          snippets[index].disabled
+        );
+        
+        // Check if all selected snippets are enabled
+        const allEnabled = Array.from(selectedSnippets).every(index => 
+          !snippets[index].disabled
+        );
+        
+        if (allDisabled) {
+          toggleButton.textContent = 'Enable';
+        } else if (allEnabled) {
+          toggleButton.textContent = 'Disable';
+        } else {
+          // Mixed state - some enabled, some disabled
+          toggleButton.textContent = 'Toggle';
+        }
+      }
+    }
+    
+    function selectSnippet(index) {
+      selectedSnippet = index;
+      renderSnippets();
+      showSnippetDetail(snippets[index]);
+    }
+    
+    function showSnippetDetail(snippet) {
+      const panel = document.getElementById('detailPanel');
+      const snippetIndex = snippets.indexOf(snippet);
+      
+      let contentDisplay = '';
+      
+      if (snippet.richText) {
+        contentDisplay = snippet.content.trim();
+      } else {
+        contentDisplay = escapeHtml(snippet.content.trim());
+      }
+      
+      // Determine button text based on disabled state
+      const toggleButtonText = snippet.disabled ? 'Enable' : 'Disable';
+      const toggleButtonClass = snippet.disabled ? 'btn-primary' : 'btn-secondary';
+      
+      panel.innerHTML = `
+        <div class="detail-content">
+          <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
+            <h2 style="margin: 0;">${escapeHtml(snippet.name)}</h2>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn ${toggleButtonClass}" onclick="toggleDetailSnippetState(${snippetIndex})" style="padding: 8px 16px; font-size: 13px;">${toggleButtonText}</button>
+              <button class="btn btn-primary" onclick="editSnippet(${snippetIndex})" style="padding: 8px 16px; font-size: 13px;">Edit</button>
+              <button class="btn btn-danger" onclick="deleteSnippet(${snippetIndex})" style="padding: 8px 16px; font-size: 13px;">Delete</button>
+            </div>
+          </div>
+          <span class="detail-trigger">${escapeHtml(snippet.trigger)}</span>
+          <div class="detail-meta">
+            <div>Type: ${snippet.richText ? 'Rich Text' : 'Plain Text'}</div>
+            <div>Category: ${escapeHtml(snippet.category || 'Uncategorized')}</div>
+            <div>Used: ${snippet.usage || 0} times</div>
+          </div>
+          <hr class="detail-divider">
+          <div class="detail-body ${snippet.richText ? 'rich' : 'plain'}">
+            ${snippet.richText ? contentDisplay : `<pre>${contentDisplay}</pre>`}
+          </div>
+        </div>
+      `;
+    }
+    
+    async function toggleDetailSnippetState(index) {
+      snippets[index].disabled = !snippets[index].disabled;
+      await ipcRenderer.invoke('update-snippet', index, snippets[index]);
+      
+      // Refresh detail view to update button text
+      showSnippetDetail(snippets[index]);
+      
+      // Refresh snippet list to show visual change
+      renderSnippets();
+    }
+
+    function showEmptyDetail() {
+      const panel = document.getElementById('detailPanel');
+      panel.innerHTML = `
+        <div class="detail-empty">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+          </svg>
+          <h3>No snippet selected</h3>
+          <p>Select a snippet from the list to view its details</p>
+        </div>
+      `;
+    }
+    
+    function showNewSnippetModal() {
+      editingSnippetIndex = null;
+      showSnippetModal('New Snippet', { 
+        name: '', 
+        trigger: '', 
+        content: '', 
+        richText: false, 
+        category: selectedCategory !== 'All' ? selectedCategory : 'Uncategorized',
+        disabled: false
+      });
+    }
+    
+    function editSnippet(index) {
+      editingSnippetIndex = index;
+      showSnippetModal('Edit Snippet', snippets[index]);
+    }
+    
+    function showSnippetModal(title, data) {
+      const categoriesOptions = categories
+        .filter(c => c !== 'All')
+        .map(c => `<option value="${escapeAttr(c)}" ${(data.category || 'Uncategorized') === c ? 'selected' : ''}>${escapeHtml(c)}</option>`)
+        .join('');
+      
+      const modal = document.createElement('div');
+      modal.className = 'modal-overlay';
+      modal.innerHTML = `
+        <div class="modal">
+          <div class="modal-header">
+            <h3>${title}</h3>
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+          </div>
+          <div class="modal-body">
+            <div class="form-group">
+              <label>Snippet Name *</label>
+              <input type="text" id="modalName" value="${escapeAttr(data.name)}" placeholder="e.g., Email Signature">
+            </div>
+            
+            <div class="form-group">
+              <label>Trigger *</label>
+              <input type="text" id="modalTrigger" value="${escapeAttr(data.trigger)}" placeholder="e.g., ;sig">
+            </div>
+            
+            <div class="form-group">
+              <label>Category</label>
+              <select id="modalCategory">
+                ${categoriesOptions}
+                <option value="__new__">+ Create New Category</option>
+              </select>
+              <div id="newCategoryContainer"></div>
+            </div>
+            
+            <div class="form-group">
+              <div class="checkbox-group">
+                <input type="checkbox" id="modalRichText" ${data.richText ? 'checked' : ''} onchange="toggleModalEditor()">
+                <label for="modalRichText" style="margin: 0;">Rich Text (formatting, images, bullets)</label>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label>Content *</label>
+              <textarea id="modalContent" class="plain-text-editor ${!data.richText ? 'visible' : ''}" placeholder="Enter content" style="${!data.richText ? 'display: block;' : 'display: none;'}">${escapeHtml(data.content)}</textarea>
+              <div id="modalEditorWrapper" style="${data.richText ? 'display: block;' : 'display: none;'}">
+                <div id="modalEditorContainer"></div>
+                <div class="editor-hint">💡 Paste formatted content or use toolbar</div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <div id="errorMessage"></div>
+            <div class="modal-footer-buttons">
+              <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+              <button class="btn btn-primary" onclick="saveSnippet()">${editingSnippetIndex !== null ? 'Update' : 'Create'}</button>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      document.body.appendChild(modal);
+      setupModalBackdropHandler(modal);
+      
+      document.getElementById('modalCategory').addEventListener('change', function() {
+        if (this.value === '__new__') {
+          showNewCategoryInput();
+        }
+      });
+      
+      setTimeout(() => {
+        quill = new Quill('#modalEditorContainer', {
+          theme: 'snow',
+          placeholder: 'Paste or type formatted content...',
+          modules: {
+            toolbar: [
+              ['bold', 'italic', 'underline', 'strike'],
+              [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+              [{ 'header': [1, 2, 3, false] }],
+              [{ 'color': [] }, { 'background': [] }],
+              ['link', 'image'],
+              ['clean']
+            ]
+          }
+        });
+        
+        if (data.richText && data.content) {
+          quill.root.innerHTML = data.content;
+        }
+      }, 100);
+    }
+    
+    function showNewCategoryInput() {
+      const container = document.getElementById('newCategoryContainer');
+      container.innerHTML = `
+        <div class="new-category-inline">
+          <input type="text" id="newCategoryInput" placeholder="Enter new category name">
+          <button onclick="addNewCategoryFromModal()">Add</button>
+        </div>
+      `;
+      setTimeout(() => document.getElementById('newCategoryInput').focus(), 100);
+    }
+    
+    function addNewCategoryFromModal() {
+      const input = document.getElementById('newCategoryInput');
+      const newCat = input.value.trim();
+      
+      if (!newCat) {
+        showError('Please enter a category name');
+        return;
+      }
+      
+      if (categories.includes(newCat)) {
+        showError(`Category "${newCat}" already exists`);
+        return;
+      }
+      
+      categories.push(newCat);
+      
+      const select = document.getElementById('modalCategory');
+      const option = document.createElement('option');
+      option.value = newCat;
+      option.textContent = newCat;
+      option.selected = true;
+      select.insertBefore(option, select.lastElementChild);
+      
+      document.getElementById('newCategoryContainer').innerHTML = '';
+    }
+    
+    function toggleModalEditor() {
+      const isRichText = document.getElementById('modalRichText').checked;
+      const plainEditor = document.getElementById('modalContent');
+      const richWrapper = document.getElementById('modalEditorWrapper');
+      
+      if (isRichText) {
+        plainEditor.classList.remove('visible');
+        plainEditor.style.display = 'none';
+        richWrapper.style.display = 'block';
+        richWrapper.classList.add('visible');
+        if (quill) {
+          setTimeout(() => quill.focus(), 100);
+        }
+      } else {
+        richWrapper.style.display = 'none';
+        richWrapper.classList.remove('visible');
+        plainEditor.classList.add('visible');
+        plainEditor.style.display = 'block';
+        plainEditor.focus();
+      }
+    }
+    
+    async function saveSnippet() {
+      // Disable button to prevent double-click
+      const submitBtn = event?.target?.closest('.btn-primary');
+      if (submitBtn) submitBtn.disabled = true;
+      
+      const name = document.getElementById('modalName')?.value.trim();
+      const trigger = document.getElementById('modalTrigger')?.value.trim();
+      const categorySelect = document.getElementById('modalCategory');
+      const category = categorySelect?.value === '__new__' ? 'Uncategorized' : categorySelect?.value;
+      const richText = document.getElementById('modalRichText')?.checked;
+      
+      let content;
+      if (richText) {
+        if (!quill) {
+          showError('Rich text editor not initialized');
+          if (submitBtn) submitBtn.disabled = false;
+          return;
+        }
+        content = quill.root.innerHTML.trim();
+        if (quill.getText().trim().length === 0) {
+          showError('Please enter some content');
+          if (submitBtn) submitBtn.disabled = false;
+          return;
+        }
+      } else {
+        content = document.getElementById('modalContent')?.value.trim();
+      }
+      
+      if (!name || !trigger || !content) {
+        showError('Please fill in all required fields');
+        if (submitBtn) submitBtn.disabled = false;
+        return;
+      }
+      
+      const duplicateIndex = snippets.findIndex((s, i) => 
+        s.trigger.toLowerCase() === trigger.toLowerCase() && i !== editingSnippetIndex
+      );
+      
+      if (duplicateIndex !== -1) {
+        showError(`Trigger "${trigger}" already exists in snippet "${snippets[duplicateIndex].name}"`);
+        if (submitBtn) submitBtn.disabled = false;
+        return;
+      }
+      
+      const snippet = { 
+        name, 
+        trigger, 
+        content, 
+        richText, 
+        category,
+        disabled: false,
+        usage: editingSnippetIndex !== null ? (snippets[editingSnippetIndex].usage || 0) : 0
+      };
+      
+      try {
+        if (editingSnippetIndex !== null) {
+          await ipcRenderer.invoke('update-snippet', editingSnippetIndex, snippet);
+        } else {
+          await ipcRenderer.invoke('add-snippet', snippet);
+        }
+
+        showFloatingNotification(editingSnippetIndex !== null ? 'Snippet updated' : 'Snippet created');
+
+        await loadData();
+        renderCategories();
+        renderSnippets();
+        closeModal();
+
+        if (editingSnippetIndex !== null) {
+          selectSnippet(editingSnippetIndex);
+        }
+      } catch (error) {
+        console.error('Error saving snippet:', error);
+        showError('Failed to save snippet');
+        if (submitBtn) submitBtn.disabled = false;
+      }
+    }
+    
+    function showFloatingNotification(message) {
+      const notification = document.createElement('div');
+      notification.className = 'floating-notification';
+      notification.textContent = '✓ ' + message;
+      document.body.appendChild(notification);
+      
+      setTimeout(() => notification.remove(), 4000);
+    }
+    
+    function showError(message) {
+      const errorDiv = document.getElementById('errorMessage');
+      errorDiv.innerHTML = `<div class="error-message">${message}</div>`;
+    }
+    
+    function closeModal() {
+      const modal = document.querySelector('.modal-overlay');
+      if (modal) {
+        // Clean up quill instance if it exists
+        if (quill && quill.root) {
+          quill.disable();
+          quill = null;
+        }
+        // Remove modal from DOM
+        modal.remove();
+      }
+    }
+    
+    function setupModalBackdropHandler(modalElement) {
+      // Handle clicking outside the modal to close it
+      modalElement.addEventListener('click', function(e) {
+        if (e.target === this) {
+          closeModal();
+        }
+      });
+      
+      // Handle ESC key to close modal
+      const handleEscKey = function(e) {
+        if ((e.key === 'Escape' || e.keyCode === 27) && document.querySelector('.modal-overlay')) {
+          closeModal();
+          document.removeEventListener('keydown', handleEscKey);
+        }
+      };
+      
+      document.addEventListener('keydown', handleEscKey);
+    }
+
+    function openLink(event, url) {
+      event.preventDefault();
+      ipcRenderer.invoke('open-external-link', url).catch(err => {
+        console.error('Failed to open link:', err);
+      });
+    }
+
+    function showAboutModal() {
+      const appName = 'Expandify';
+      const version = '1.0.0';
+      const author = 'Raymond Maraya';
+      const githubLink = 'https://github.com/rmonggi/Expandify';
+      
+      const modal = document.createElement('div');
+      modal.className = 'modal-overlay';
+      modal.innerHTML = `
+        <div class="modal" style="max-width: 450px;">
+          <div class="modal-header">
+            <h3>About Expandify</h3>
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+          </div>
+          <div class="modal-body">
+            <div style="text-align: center;">
+              <h2 style="margin: 0 0 8px 0; color: #0078d4; font-size: 28px;">${appName}</h2>
+              <p style="margin: 0 0 16px 0; color: #666; font-size: 14px;">v${version}</p>
+              
+              <div style="border-top: 1px solid #e8e8e8; border-bottom: 1px solid #e8e8e8; padding: 16px 0; margin: 20px 0;">
+                <p style="margin: 0 0 8px 0; color: #333; font-size: 13px;">
+                  <strong>Author:</strong> ${author}
+                </p>
+                <p style="margin: 0; color: #333; font-size: 13px;">
+                  <strong>No fuss text expansion app</strong>
+                </p>
+              </div>
+              
+              <p style="margin: 20px 0;">
+                <a href="${githubLink}" style="color: #0078d4; text-decoration: none; font-weight: 500;" onclick="openLink(event, '${githubLink}')">Visit GitHub Repository →</a>
+              </p>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <div class="modal-footer-buttons">
+              <button class="btn btn-primary" onclick="closeModal()">Close</button>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      setupModalBackdropHandler(modal);
+    }
+
+    async function showAllowedAppsModal() {
+      const allowedApps = await ipcRenderer.invoke('get-allowed-apps');
+      
+      const modal = document.createElement('div');
+      modal.className = 'modal-overlay';
+      
+      let appsHTML = allowedApps.map(app => `
+        <div class="app-item">
+          <div class="app-name">${escapeHtml(app)}</div>
+          <button class="app-remove-btn" onclick="removeAllowedApp('${app.replace(/'/g, "\\'")}')">Remove</button>
+        </div>
+      `).join('');
+
+      if (allowedApps.length === 0) {
+        appsHTML = '<div style="padding: 20px; text-align: center; color: #999;">No allowed apps configured</div>';
+      }
+      
+      modal.innerHTML = `
+        <div class="modal" style="max-width: 600px;">
+          <div class="modal-header">
+            <h3>Allowed Applications</h3>
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+          </div>
+          <div class="modal-body">
+            <div class="allowed-apps-container">
+              <div>
+                <label style="display: block; margin-bottom: 10px; font-weight: 500; color: #333;">Currently Allowed Apps:</label>
+                <div class="apps-list">${appsHTML}</div>
+              </div>
+              
+              <div>
+                <label style="display: block; margin-bottom: 10px; font-weight: 500; color: #333;">Add New Application:</label>
+                <div class="add-app-controls">
+                  <input type="text" class="app-input" id="appPathInput" placeholder="Enter app path (e.g., notepad.exe)" />
+                  <button class="browse-btn" onclick="browseForApp()">Browse</button>
+                  <button class="add-app-btn" onclick="addAllowedApp()">Add</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <div style="font-size: 12px; color: #666; margin-bottom: 10px;">
+              💡 Enter executable names (e.g., chrome.exe) or full paths to applications. The app will work when these applications are active.
+            </div>
+            <div class="modal-footer-buttons">
+              <button class="btn btn-primary" onclick="closeModal()">Done</button>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      setupModalBackdropHandler(modal);
+      document.getElementById('appPathInput').focus();
+    }
+
+    window.browseForApp = async function() {
+      const filePath = await ipcRenderer.invoke('browse-for-app');
+      if (filePath) {
+        document.getElementById('appPathInput').value = filePath;
+      }
+    };
+
+    window.addAllowedApp = async function() {
+      const input = document.getElementById('appPathInput');
+      let appPath = input.value.trim();
+      
+      if (!appPath) {
+        alert('Please enter an application path or use Browse');
+        return;
+      }
+      
+      // Validate path format
+      if (appPath.includes('..') || appPath.includes('~')) {
+        alert('Invalid path: path traversal not allowed');
+        input.value = '';
+        return;
+      }
+      
+      // Check Windows MAX_PATH limit
+      if (appPath.length > 260) {
+        alert('Path too long (maximum 260 characters)');
+        return;
+      }
+      
+      // Warn if path doesn't look like executable
+      if (!appPath.toLowerCase().endsWith('.exe') && appPath.includes('\\') && appPath.includes('.')) {
+        // It's a path with extension but not .exe, might be ok
+        console.warn('Path does not end with .exe:', appPath);
+      }
+      
+      await ipcRenderer.invoke('add-allowed-app', appPath);
+      await showAllowedAppsModal();
+    };
+
+    window.removeAllowedApp = async function(appPath) {
+      await ipcRenderer.invoke('remove-allowed-app', appPath);
+      await showAllowedAppsModal();
+    };
+    
+    async function deleteSnippet(index) {
+      const snippet = snippets[index];
+      
+      const modal = document.createElement('div');
+      modal.className = 'modal-overlay';
+      modal.innerHTML = `
+        <div class="modal" style="max-width: 400px;">
+          <div class="modal-header">
+            <h3>Confirm Delete</h3>
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+          </div>
+          <div class="modal-body">
+            <p>Are you sure you want to delete "<strong>${escapeHtml(snippet.name)}</strong>"?</p>
+          </div>
+          <div class="modal-footer">
+            <div class="modal-footer-buttons">
+              <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+              <button class="btn btn-danger" onclick="confirmDelete(${index})">Delete</button>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      setupModalBackdropHandler(modal);
+    }
+    
+    window.confirmDelete = async function(index) {
+      await ipcRenderer.invoke('delete-snippet', index);
+      await loadData();
+      renderCategories();
+      renderSnippets();
+      showEmptyDetail();
+      closeModal();
+    };
+    
+    async function bulkDeleteSnippets() {
+      if (selectedSnippets.size === 0) return;
+      
+      const modal = document.createElement('div');
+      modal.className = 'modal-overlay';
+      modal.innerHTML = `
+        <div class="modal" style="max-width: 400px;">
+          <div class="modal-header">
+            <h3>Confirm Bulk Delete</h3>
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+          </div>
+          <div class="modal-body">
+            <p>Are you sure you want to delete <strong>${selectedSnippets.size}</strong> selected snippet(s)?</p>
+          </div>
+          <div class="modal-footer">
+            <div class="modal-footer-buttons">
+              <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+              <button class="btn btn-danger" onclick="confirmBulkDelete()">Delete All</button>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      setupModalBackdropHandler(modal);
+    }
+    
+    window.confirmBulkDelete = async function() {
+      const indices = Array.from(selectedSnippets).sort((a, b) => b - a);
+      for (const index of indices) {
+        await ipcRenderer.invoke('delete-snippet', index);
+      }
+      
+      selectedSnippets.clear();
+      await loadData();
+      renderCategories();
+      renderSnippets();
+      showEmptyDetail();
+      updateBulkActions();
+      closeModal();
+    };
+    
+    async function bulkToggleDisable() {
+      if (selectedSnippets.size === 0) return;
+      
+      // Save current category before updating
+      const currentCategory = selectedCategory;
+      
+      for (const index of selectedSnippets) {
+        snippets[index].disabled = !snippets[index].disabled;
+        await ipcRenderer.invoke('update-snippet', index, snippets[index]);
+      }
+      
+      selectedSnippets.clear();
+      
+      // Re-extract categories without resetting selectedCategory
+      const categorySet = new Set();
+      snippets.forEach(s => {
+        if (s.category && s.category.trim()) {
+          categorySet.add(s.category);
+        } else {
+          categorySet.add('Uncategorized');
+        }
+      });
+      
+      const sortedCategories = Array.from(categorySet).sort();
+      categories = ['All', ...sortedCategories];
+      
+      // Keep current category active
+      selectedCategory = currentCategory;
+      
+      // Re-render without changing category
+      renderCategories();
+      renderSnippets();
+      updateBulkActions();
+    } 
+    
+    function showMoveModal() {
+      if (selectedSnippets.size === 0) return;
+      
+      const categoriesOptions = categories
+        .filter(c => c !== 'All')
+        .map(c => `<option value="${escapeAttr(c)}">${escapeHtml(c)}</option>`)
+        .join('');
+      
+      const modal = document.createElement('div');
+      modal.className = 'modal-overlay';
+      modal.innerHTML = `
+        <div class="modal" style="max-width: 400px;">
+          <div class="modal-header">
+            <h3>Move Snippets</h3>
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+          </div>
+          <div class="modal-body">
+            <p>Move <strong>${selectedSnippets.size}</strong> snippet(s) to:</p>
+            <div class="form-group">
+              <select id="moveToCategory">
+                ${categoriesOptions}
+              </select>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <div class="modal-footer-buttons">
+              <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+              <button class="btn btn-primary" onclick="confirmMove()">Move</button>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      setupModalBackdropHandler(modal);
+    }
+    
+    window.confirmMove = async function() {
+      const newCategory = document.getElementById('moveToCategory').value;
+      
+      for (const index of selectedSnippets) {
+        const snippet = snippets[index];
+        snippet.category = newCategory;
+        await ipcRenderer.invoke('update-snippet', index, snippet);
+      }
+      
+      selectedSnippets.clear();
+      await loadData();
+      renderCategories();
+      renderSnippets();
+      updateBulkActions();
+      closeModal();
+    };
+    
+    function showNewCategoryModal() {
+      const modal = document.createElement('div');
+      modal.className = 'modal-overlay';
+      modal.innerHTML = `
+        <div class="modal" style="max-width: 400px;">
+          <div class="modal-header">
+            <h3>New Category</h3>
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+          </div>
+          <div class="modal-body">
+            <div class="form-group">
+              <label>Category Name</label>
+              <input type="text" id="newCategoryName" placeholder="e.g., Work, Personal">
+            </div>
+          </div>
+          <div class="modal-footer">
+            <div id="errorMessage"></div>
+            <div class="modal-footer-buttons">
+              <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+              <button class="btn btn-primary" onclick="createCategory()">Create</button>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      setupModalBackdropHandler(modal);
+      setTimeout(() => document.getElementById('newCategoryName').focus(), 100);
+    }
+    
+    function createCategory() {
+      const name = document.getElementById('newCategoryName').value.trim();
+      
+      if (!name) {
+        showError('Please enter a category name');
+        return;
+      }
+      
+      if (categories.includes(name)) {
+        showError(`Category "${name}" already exists`);
+        return;
+      }
+      
+      categories.push(name);
+      renderCategories();
+      closeModal();
+    }
+    
+    function toggleTriggers() {
+      triggersDisabled = !triggersDisabled;
+      const item = document.getElementById('toggleTriggerItem');
+      const banner = document.getElementById('warningBanner');
+      
+      item.textContent = triggersDisabled ? 'Enable Expansion' : 'Disable Expansion';
+      banner.classList.toggle('show', triggersDisabled);
+      
+      ipcRenderer.send('toggle-triggers', triggersDisabled);
+    }
+
+    async function toggleStartupOnBoot() {
+      const currentState = await ipcRenderer.invoke('get-startup-on-boot');
+      const newState = !currentState;
+      
+      await ipcRenderer.invoke('toggle-startup-on-boot', newState);
+      
+      const item = document.getElementById('startupItem');
+      item.textContent = newState ? '☑ Startup on Boot' : '☐ Startup on Boot';
+    }
+
+    async function initStartupState() {
+      const isEnabled = await ipcRenderer.invoke('get-startup-on-boot');
+      const item = document.getElementById('startupItem');
+      item.textContent = isEnabled ? '☑ Startup on Boot' : '☐ Startup on Boot';
+    }
+    
+    function exportSnippets() {
+      const xml = generateXML();
+      const blob = new Blob([xml], { type: 'text/xml' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `snippets-${Date.now()}.xml`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+    
+    function generateXML() {
+      let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+      xml += '<snippets>\n';
+      
+      snippets.forEach(snippet => {
+        xml += '  <snippet>\n';
+        xml += `    <name>${escapeXml(snippet.name)}</name>\n`;
+        xml += `    <trigger>${escapeXml(snippet.trigger)}</trigger>\n`;
+        xml += `    <category>${escapeXml(snippet.category || 'Uncategorized')}</category>\n`;
+        xml += `    <richText>${snippet.richText}</richText>\n`;
+        xml += `    <disabled>${snippet.disabled || false}</disabled>\n`;
+        xml += `    <content><![CDATA[${snippet.content}]]></content>\n`;
+        xml += '  </snippet>\n';
+      });
+      
+      xml += '</snippets>';
+      return xml;
+    }
+    
+    function importSnippets() {
+      document.getElementById('importFileInput').click();
+    }
+    
+    async function handleImportFile(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+        try {
+          const xml = e.target.result;
+          const parser = new DOMParser();
+          const xmlDoc = parser.parseFromString(xml, 'text/xml');
+          
+          const snippetNodes = xmlDoc.getElementsByTagName('snippet');
+          let imported = 0;
+          
+          for (let node of snippetNodes) {
+            const snippet = {
+              name: node.getElementsByTagName('name')[0].textContent,
+              trigger: node.getElementsByTagName('trigger')[0].textContent,
+              category: node.getElementsByTagName('category')[0].textContent,
+              richText: node.getElementsByTagName('richText')[0].textContent === 'true',
+              disabled: node.getElementsByTagName('disabled')[0]?.textContent === 'true' || false,
+              content: node.getElementsByTagName('content')[0].textContent,
+              usage: 0
+            };
+            
+            await ipcRenderer.invoke('add-snippet', snippet);
+            imported++;
+          }
+          
+          await loadData();
+          renderCategories();
+          renderSnippets();
+          
+          alert(`Successfully imported ${imported} snippet(s)`);
+        } catch (error) {
+          alert('Error importing file: ' + error.message);
+        }
+      };
+      reader.readAsText(file);
+      
+      event.target.value = '';
+    }
+    
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+    
+    function escapeAttr(text) {
+      return String(text).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+    
+    function escapeXml(text) {
+      return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;');
+    }
+    
+    function initDragAndDrop() {
+      const snippetsContainer = document.getElementById('snippetsList');
+      const categoriesList = document.getElementById('categoriesList');
+      
+      snippetsContainer.addEventListener('dragstart', (e) => {
+        if (e.target.closest('.snippet-list-item')) {
+          const snippetItem = e.target.closest('.snippet-list-item');
+          const snippetIndex = parseInt(snippetItem.getAttribute('data-snippet-index'));
+          
+          e.dataTransfer.effectAllowed = 'move';
+          e.dataTransfer.setData('snippetIndex', snippetIndex);
+          snippetItem.style.opacity = '0.5';
+        }
+      });
+      
+      snippetsContainer.addEventListener('dragend', (e) => {
+        const snippetItem = e.target.closest('.snippet-list-item');
+        if (snippetItem) {
+          snippetItem.style.opacity = '1';
+        }
+      });
+      
+      categoriesList.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        
+        const categoryItem = e.target.closest('.category-item');
+        if (categoryItem) {
+          categoryItem.style.backgroundColor = '#2c5aa0';
+          categoryItem.style.borderLeftColor = '#3498db';
+        }
+      });
+      
+      categoriesList.addEventListener('dragleave', (e) => {
+        const categoryItem = e.target.closest('.category-item');
+        if (categoryItem) {
+          categoryItem.style.backgroundColor = '';
+          categoryItem.style.borderLeftColor = '';
+        }
+      });
+      
+      categoriesList.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        
+        const categoryItem = e.target.closest('.category-item');
+        if (!categoryItem) return;
+        
+        categoryItem.style.backgroundColor = '';
+        categoryItem.style.borderLeftColor = '';
+        
+        const snippetIndex = parseInt(e.dataTransfer.getData('snippetIndex'));
+        const targetCategory = categoryItem.textContent.trim().split('\n')[0];
+        
+        if (targetCategory === 'All') {
+          alert('Cannot move snippets to "All" category');
+          return;
+        }
+        
+        const snippet = snippets[snippetIndex];
+        snippet.category = targetCategory;
+        await ipcRenderer.invoke('update-snippet', snippetIndex, snippet);
+        
+        await loadData();
+        renderCategories();
+        renderSnippets();
+      });
+    }
+    
+    ipcRenderer.on('show-notification', (event, data) => {
+      // Notification received (logging removed for size optimization)
+    });
+    
+    ipcRenderer.on('snippets-updated', async () => {
+      await loadData();
+      renderCategories();
+      renderSnippets();
+    });
+    
+    ipcRenderer.on('snippet-used', async (event, triggerUsed) => {
+      const snippet = snippets.find(s => s.trigger === triggerUsed);
+      if (snippet) {
+        snippet.usage = (snippet.usage || 0) + 1;
+        await ipcRenderer.invoke('update-snippet', snippets.indexOf(snippet), snippet);
+        if (selectedSnippet !== null && snippets[selectedSnippet] === snippet) {
+          showSnippetDetail(snippet);
+        }
+      }
+    });
+    
+    init();
+  </script>
+</body>
+</html>
